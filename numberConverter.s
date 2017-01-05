@@ -1,10 +1,10 @@
 		;------INITIALISATION---------
 		MOV		R10,#0  ;NEGATIVE?
 		
-		MOV		R1,#0x10 ;1st and 2nd
-		MOV		R0,#0x01 ;3rd and 4th
+		MOV		R1,#0xFF ;1st and 2nd
+		MOV		R0,#0xFF ;3rd and 4th
 		ADD		R1,R0,R1,LSL #8
-		MOV		R0,#0x00 ;5th and 6h
+		MOV		R0,#0xFF ;5th and 6h
 		ADD		R1,R0,R1,LSL #8
 		;PUT		MANTISSA HERE - note: do not put in the 1 in the msb position
 		;range	- 0x0 (1) to 0xFFFFFE (1.1111...111)
