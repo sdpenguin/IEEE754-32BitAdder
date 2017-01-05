@@ -1,15 +1,15 @@
 		;------INITIALISATION---------
 		MOV		R10,#0  ;NEGATIVE?
 		
-		MOV		R1,#0xFF ;1st and 2nd
-		MOV		R0,#0xFF ;3rd and 4th
+		MOV		R1,#0x83 ;1st and 2nd
+		MOV		R0,#0x00 ;3rd and 4th
 		ADD		R1,R0,R1,LSL #8
-		MOV		R0,#0xFF ;5th and 6h
+		MOV		R0,#0x00 ;5th and 6h
 		ADD		R1,R0,R1,LSL #8
 		;PUT		MANTISSA HERE - note: do not put in the 1 in the msb position
 		;range	- 0x0 (1) to 0xFFFFFE (1.1111...111)
 		
-		MOV		R0,#0 ;PUT EXP HERE (MAX 128, min -127) (256 range since the highest representable number is 255 and 0 is also a number)
+		MOV		R0,#-127 ;PUT EXP HERE (MAX 128, min -127) (256 range since the highest representable number is 255 and 0 is also a number)
 		;-----------------------------
 		
 		ADD		R0,R0,#127

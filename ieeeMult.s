@@ -1,3 +1,8 @@
+			MOV		R0,#0x40000000
+			MOV		R1,#0x00000001
+			BL		IEEE754MULT
+			END
+			
 IEEE754MULT
 			;SETUP
 			STMED	R13!,{R0,R1,R3-R12,LR}
@@ -6,17 +11,12 @@ IEEE754MULT
 			LSR		R5,R5,#1 ;AND MASK FOR MANTISSA
 			MOV		R8,#1
 			
-			;R7		will store the summed exponent
-			AND		R6,R4,R0, LSR #23
-			AND		R7,R4,R1, LSR #23
-			SUB		R7,R7,#127 ;equivalent to taking away 127 for each and then adding 127
-			ADD		R7,R6,R7	;R6 stores the result
-			
 			;R10		will store the sign
 			MOV		R10,R0,LSR #31
 			EOR		R10,R10,R1, LSR #31 ;contains sign bit inLSB position
 			
 			;MULTIPLICATION	into R2-R3
+			STMED	R13!,{R0,R1}
 			LSL		R0,R0,#9
 			LSR		R0,R0,#9
 			ADD		R0,R0,R8, LSL #23 ;add in a 1 for pre-multiplication preparation
@@ -24,15 +24,29 @@ IEEE754MULT
 			LSR		R1,R1,#9
 			ADD		R1,R1,R8, LSL #23
 			BL		MUL24X24 ;multiply R0 and R1, store in R2-3
+			LDMED	R13!,{R0,R1} ;Keep R0 and R1
 			
 			;ADD		ON ADDITIONAL EXPONENT FOR THRESHOLD stored in R9 by subroutine and also produces the mantissa in R2
 			BL		ADDITEXPON
 			AND		R2,R2,R5 ;take only the first 23 bits (cut off the 1 in the 24th bit (2^23))
 			ADD		R7,R7,R9 ;add on any necessary extra to R7
 			
+			;R7		will store the summed exponent
+			AND		R7,R4,R1, LSR #23
+			CMP		R6,#255 ;Max threshold - we do the second one first because it takes presedence according to the testbench
+			MOVGT	R2,R1
+			BGT		NOTANUMBER
+			AND		R6,R4,R0, LSR #23
+			CMP		R6,#255 ;Max threshold
+			MOVGT	R2,R0
+			BGT		NOTANUMBER
+			SUB		R7,R7,#127 ;equivalent to taking away 127 for each and then adding 127
+			ADD		R7,R6,R7	;R6 stores the result
+			
 			;THRESHOLDS
 			CMP		R7,#0 ;min threshold
-			MOVLT	R7,#0
+			MOVLT	R7,#0 ;make the mantissa as small as possible
+			MOVLT	R2,#0 ;make the significand/mantissa zero (as small as possible)
 			CMP		R7,#255 ;Max threshold
 			MOVGT	R7,#255
 			
@@ -40,7 +54,7 @@ IEEE754MULT
 			ADD		R2,R2,R7, LSL #23 ;23 -> smallest one is in the 24th bit
 			ADD		R2,R2,R10, LSL #31 ;was in the LSB, now in the MSB
 			
-			LDMED	R13!,{R0,R1,R3-R12,PC}
+NOTANUMBER	LDMED	R13!,{R0,R1,R3-R12,PC}
 			
 MUL24X24		STMED	R13!,{R0,R1,R4,R5,LR}
 			MOVS		R4,#-1
