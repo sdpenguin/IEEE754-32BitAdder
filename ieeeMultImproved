@@ -1,11 +1,17 @@
-			MOV		R0,#0x3F
+			MOV		R0,#0x7A
 			LSL		R0,R0,#8
-			ADD		R0,R0,#0x45
+			ADD		R0,R0,#0x68
 			LSL		R0,R0,#8
-			ADD		R0,R0,#0x67
+			ADD		R0,R0,#0xB2
 			LSL		R0,R0,#8
-			ADD		R0,R0,#0x89
-			MOV		R1,#0x40000000
+			ADD		R0,R0,#0x39
+			MOV		R1,#0x88
+			LSL		R1,R1,#8
+			ADD		R1,R1,#0x30
+			LSL		R1,R1,#8
+			ADD		R1,R1,#0x4A
+			LSL		R1,R1,#8
+			ADD		R1,R1,#0xF3
 			BL		IEEE754MULT
 			END
 			
