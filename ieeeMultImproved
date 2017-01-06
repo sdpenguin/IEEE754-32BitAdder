@@ -1,22 +1,4 @@
-			MOV		R0,#0x7A
-			LSL		R0,R0,#8
-			ADD		R0,R0,#0x68
-			LSL		R0,R0,#8
-			ADD		R0,R0,#0xB2
-			LSL		R0,R0,#8
-			ADD		R0,R0,#0x39
-			MOV		R1,#0x88
-			LSL		R1,R1,#8
-			ADD		R1,R1,#0x30
-			LSL		R1,R1,#8
-			ADD		R1,R1,#0x4A
-			LSL		R1,R1,#8
-			ADD		R1,R1,#0xF3
-			BL		IEEE754MULT
-			END
-			
 IEEE754MULT
-			
 			STMED	R13!,{R0,R1,R3-R12,LR}
 			
 			MOV		R4,#0xFF ;AND MASK FOR EXPONENT
@@ -56,18 +38,21 @@ CHECK1		CMP		R6,#0
 			CMP		R9,#0
 			BNE		CHECK2 ;we now enter zero territory - otherwise this may have been denormal
 			CMP		R7,#0xFF
-			MOVEQ	R2,#0xFFC00000
-			BEQ		DONE
-			MOVNE	R2,#0x0
+			BNE		NOSPEC1
+			MOV		R2,#0xFF000000
+			ADD		R2,R2,#0x00C00000
+			B		DONE
+NOSPEC1		MOVNE	R2,#0x0	;this wasn't infinity times 0 which is a special case with 0xFFC00000 output
 			BNE		SIGNING
 CHECK2		CMP		R7,#0
 			BNE		CHECK3
 			CMP		R10,#0
 			BNE		CHECK3 ;we now enter zero territory - otherwise this may have been denormal
 			CMP		R6,#0xFF
-			MOVEQ	R2,#0xFFC00000
-			BEQ		DONE
-			MOVNE	R2,#0x0
+			MOV		R2,#0xFF000000
+			ADD		R2,R2,#0x00C00000
+			B		DONE
+NOSPEC2		MOVNE	R2,#0x0
 			BNE		SIGNING
 CHECK3		CMP		R7,#0xFF
 			BNE		CHECK4
@@ -132,9 +117,10 @@ DENORMALRET	ADD		R7,R7,#1
 SKIPDENLOOP	LSRS		R3,R3,#1
 			RRXS		R2,R2
 			ADC		R2,R2,#0
+			ADD		R7,R7,#1
 			
-			CMP		R2,#0x800000
-			BLT		THRESHOLDS ;skip if it is denorm
+			;		CMP		R2,#0x800000
+			;		BLT		THRESHOLDS ;skip if it is denorm
 			
 EXPONENTDEBT	BL		ADDITEXPON
 			AND		R2,R2,R5 ;take only the first 23 bits (cut off the 1 in the 24th bit (2^23))
@@ -169,7 +155,7 @@ LOOP			LSRS		R1,R1,#1
 			LDMED	R13!,{R0,R1,R4,R5,PC}
 			
 			;CALCULATE	EXPONENT SUBROUTINE: TODO HANDLE DENORMALISED, OR THOSE THAT BECOME DENORMALISED
-ADDITEXPON	STMED	R13!,{R0,R1,R3-R5,R7-R12,LR}
+ADDITEXPON	STMED	R13!,{R0,R1,R4-R5,R7-R12,LR}
 			MOV		R0,#0xFF
 			ADD		R0,R0,#0x100
 			LSL		R0,R0, #23 ;This mask checks whether all the bits are zero yet during the loop
@@ -178,7 +164,7 @@ LOOP2		LSRS		R3,R3,#1
 			RRX		R2,R2
 			ADD		R12,R12,#1
 			CMP		R12,#22
-			BNE		LOOP2 ;shifts 22 times to the right
+			BNE		LOOP2 ;shifts 23 times to the right
 			;now		must check whether there are extra bits (i.e. check whether there is a bit in place no. 26)
 			;set		overflow to 1 if there is
 			;then	check the 1st bit to see if it is greater or equal to 8 (round up)
@@ -187,10 +173,10 @@ LOOP2		LSRS		R3,R3,#1
 			MOV		R6,#0
 			LSR		R2,R2,#1
 			ADDNE	R2,R2,#1
-			TST		R2,R8, LSL #26
+			TST		R2,R8, LSL #25
 			MOVNE	R6,#2
 			LSRNE	R2,R2,#2
-			TST		R2,R8,LSL #25
+			TST		R2,R8,LSL #24
 			MOVNE	R6,#1
 			LSRNE	R2,R2,#1
-			LDMED	R13!,{R0,R1,R3-R5,R7-R12,PC}
+			LDMED	R13!,{R0,R1,R4-R5,R7-R12,PC}
